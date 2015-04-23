@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/cometlongpollingchat.iml" filepath="$PROJECT_DIR$/cometlongpollingchat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cometlongpollingchat-build.iml" filepath="$PROJECT_DIR$/.idea/modules/cometlongpollingchat-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/cometlongpollingchat-build.iml" filepath="$PROJECT_DIR$/.idea/modules/cometlongpollingchat-build.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/longpollingchat.iml" filepath="$PROJECT_DIR$/.idea/modules/longpollingchat.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/longpollingchat-build.iml" filepath="$PROJECT_DIR$/.idea/modules/longpollingchat-build.iml" />
+    </modules>
+  </component>
+</project>
