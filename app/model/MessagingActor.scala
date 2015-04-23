@@ -2,29 +2,45 @@ package model
 
 import akka.actor.Actor
 import akka.actor.Actor.Receive
+import play.Logger
 
-case class SendMessage(chatMessage: ChatMessage)
+import scala.concurrent.Promise
+
 case class ListenForMessages(clientId: String, seqId: Int)
 case class BroadcastMessages()
-case class FilterMessages()
+case class SendMessage(chatMessage: ChatMessage)
 
 class MessagingActor extends Actor{
-  case class Member(seqId: Int, promise: MessagesPromise)
+  case class Member(seqId: Int, promise: MessagePromise)
+  type MessagePromise = Promise[List[ChatMessage]]
 
   var messages = List[ChatMessage]()
   var members = Map.empty[String, Member]
 
   override def receive: Receive = {
     case BroadcastMessages() => {
-      filterMessages
+      refreshMessages()
+
+      members.foreach {
+        case (key, member) => {
+          val newMessagesForMember = messages.filter(msg => msg.currentTime > member.seqId)
+          if (newMessagesForMember.size > 0) {
+            //member.promise.(newMessagesForMember)
+            members -= key
+            Logger.info("Broadcasting "+newMessagesForMember.size+" msgs to " + key)
+          }
+        }
+      }
     }
+    case SendMessage(chatMessage: ChatMessage) =>
+      messages ::= chatMessage
   }
 
-  def filterMessages = {
+  def refreshMessages() = {
     messages = messages.filter(chatMessage => isMessageFresh(chatMessage.currentTime))
   }
 
   def isMessageFresh(timestamp: Long) = {
-    timestamp + 60 > System.currentTimeMillis / 1000
+    timestamp + 5 > System.currentTimeMillis / 1000
   }
 }

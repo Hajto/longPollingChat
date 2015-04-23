@@ -3,10 +3,12 @@
 # ~~~~
 
 # Home page
-GET        /                    controllers.Application.index
-POST       /sendMessage         controllers.Application.onMessage
+GET         /                    controllers.Application.index
+POST        /poll/:id            controllers.Application.poll(id: Int)
+
+POST        /sendMessage         controllers.Application.onMessage
 
 # Map static resources from the /public folder to the /assets URL path
-GET        /assets/*file        controllers.Assets.at(path="/public", file)
+GET         /assets/*file        controllers.Assets.at(path="/public", file)
 
     
