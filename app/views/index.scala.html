@@ -66,12 +66,13 @@
 
         function poll() {
             $.ajax({
-                url: "poll.php",
+                method: "POST",
+                url: "poll/"+new Date().getTime(),
                 success: function (data) {
                     appendMessage(data);
                 },
-                complete: poll
-                //dataType: "json"
+                complete: poll,
+                dataType: "json"
             })
         }
 
@@ -90,7 +91,7 @@
         }
 
         $(document).ready(function () {
-            //poll();
+            poll();
         })
 
     </script>

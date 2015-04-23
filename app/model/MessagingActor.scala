@@ -6,12 +6,12 @@ import play.Logger
 
 import scala.concurrent.Promise
 
-case class ListenForMessages(clientId: String, seqId: Int)
+case class Subscribe(nick: String, seqId: Long)
 case class BroadcastMessages()
 case class SendMessage(chatMessage: ChatMessage)
 
 class MessagingActor extends Actor{
-  case class Member(seqId: Int, promise: MessagePromise)
+  case class Member(lastMessage: Long, promise: MessagePromise)
   type MessagePromise = Promise[List[ChatMessage]]
 
   var messages = List[ChatMessage]()
@@ -20,12 +20,11 @@ class MessagingActor extends Actor{
   override def receive: Receive = {
     case BroadcastMessages() => {
       refreshMessages()
-
       members.foreach {
         case (key, member) => {
-          val newMessagesForMember = messages.filter(msg => msg.currentTime > member.seqId)
+          val newMessagesForMember = messages.filter(msg => msg.currentTime > member.lastMessage)
           if (newMessagesForMember.size > 0) {
-            //member.promise.(newMessagesForMember)
+            member.promise.success(newMessagesForMember)
             members -= key
             Logger.info("Broadcasting "+newMessagesForMember.size+" msgs to " + key)
           }
@@ -34,6 +33,13 @@ class MessagingActor extends Actor{
     }
     case SendMessage(chatMessage: ChatMessage) =>
       messages ::= chatMessage
+    case Subscribe(nick: String, lastMessage: Long) => {
+      val member =  Member(lastMessage, Promise[List[ChatMessage]]())
+      members = members + (nick -> member)
+
+      sender ! member.promise
+      println(nick+" has subscribed at "+lastMessage)
+    }
   }
 
   def refreshMessages() = {
