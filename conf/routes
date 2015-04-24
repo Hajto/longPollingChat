@@ -4,7 +4,7 @@
 
 # Home page
 GET         /                    controllers.Application.index
-POST        /poll/:nick/:id      controllers.Application.poll(nick: String ,id: Int)
+POST        /poll/:nick/:id      controllers.Application.poll(nick: String ,id: Long)
 
 POST        /sendMessage         controllers.Application.onMessage
 

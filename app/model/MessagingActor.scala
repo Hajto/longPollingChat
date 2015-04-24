@@ -7,7 +7,9 @@ import play.Logger
 import scala.concurrent.Promise
 
 case class Subscribe(nick: String, seqId: Long)
+case class UnSubsribe(nick: String)
 case class BroadcastMessages()
+case class Debug()
 case class SendMessage(chatMessage: ChatMessage)
 
 class MessagingActor extends Actor{
@@ -40,6 +42,8 @@ class MessagingActor extends Actor{
       sender ! member.promise
       println(nick+" has subscribed at "+lastMessage)
     }
+    case UnSubsribe(nick: String) => members -= nick
+    case Debug() => println("Currently " + members.size + " people on Chat")
   }
 
   def refreshMessages() = {

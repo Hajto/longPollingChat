@@ -6,27 +6,28 @@
         <title>Socket.IO chat</title>
 
         <link href="@routes.Assets.at("stylesheets/main.css")" type="text/css" rel="stylesheet"/>
+        <link href="@routes.Assets.at("stylesheets/jquery.cssemoticons.css")" type="text/css" rel="stylesheet" />
 
-        <script src="http://code.jquery.com/jquery-1.11.1.js"></script>
+        <script src="@routes.Assets.at("javascripts/jquery-2.1.3.min.js")"></script>
+        <script src="@routes.Assets.at("javascripts/jquery.cssemoticons.min.js")"></script>
         <script>
         var ls = localStorage;
-        if (localStorage.getItem("username") === null)
-            var nickname = ls.getItem("nick") != undefined && ls.getItem("nick") != null ? ls.getItem("nick") : prompt("Wybierz nick");
-        var color = ls.getItem("color") != undefined && ls.getItem("color") != null ? ls.getItem("color") : "#ff0000";
+        var nickname = getNicknameFromMemory();
+        var currentColor = getColorFromMemery();
         $(document).ready(function () {
             $('#forms').submit(function () {
                 var value = $('#m').val();
                 if (value != "") {
                     var command = value.split(" ");
                     switch (command[0]) {
-                        case "help":
+                        case "/help":
                             appendMessage('Aby zmienieć kolor wpisz "color hex", hex to kolor, którego chcesz używać. Obecny kolor to ' + color + "<br/>" + " Aby zmienić nick wpisz nick nowy nick, twój obecny nick to "
                             + nickname);
                             break;
-                        case "color":
+                        case "/color":
                             if (command.length > 1) {
                                 if (/(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(command[1])) {
-                                    color = command[1];
+                                    currentColor = command[1];
                                     ls.setItem("color", command[1]);
                                     appendMessage("Nowy kolor to " + command[1]);
                                 }
@@ -38,7 +39,7 @@
                                 appendMessage("Nie podałeś koloru");
                             }
                             break;
-                        case "nick":
+                        case "/nick":
                             if (command.length > 1 && nickname != command[1]) {
                                 nickname = command[1];
                                 ls.setItem("nick", command[1]);
@@ -47,12 +48,11 @@
                                 appendMessage("Wpisałeś nowy nick?");
                             }
                             break;
-                        case "clear":
+                        case "/clear":
                             $("#messages").empty();
                             break;
                         default :
                             emitMessage(value);
-                            appendMessage("<a href ='#' style='color:" + color + "'> Ja: </a>" + value);
                             break;
                     }
                 }
@@ -63,13 +63,25 @@
         function appendMessage(msg) {
             $('#messages').append($('<li>').html(msg));
         }
-
+        function parseAndAppendMessage(incomingObject){
+            /*appendMessage('<span style="color: '+incomingObject.color+'">'+incomingObject.name+"</span>" +
+            " : " +
+            incomingObject.chatMessage
+            )*/
+            $('#messages').append($('<li>')
+                .append($("<span>").html(incomingObject.name+":").css("color",incomingObject.color))
+                .append($("<p>").html(incomingObject.chatMessage).emoticonize())
+                );
+        }
         function poll() {
             $.ajax({
                 method: "POST",
-                url: "poll/"+new Date().getTime(),
+                url: "poll/"+nickname+"/"+new Date().getTime(),
                 success: function (data) {
-                    appendMessage(data);
+                    console.log("SUCCESS " + JSON.stringify(data));
+                    $.each(data,function(index, element) {
+                      parseAndAppendMessage(element)
+                    })
                 },
                 complete: poll,
                 dataType: "json"
@@ -77,6 +89,12 @@
         }
 
         function emitMessage(data){
+        var toBeSent = {
+                    name: nickname,
+                    color: currentColor,
+                    chatMessage: data,
+                    currentTime: new Date().getTime()
+                };
             $.ajax({
                 url: "sendMessage",
                 method: "POST",
@@ -86,13 +104,33 @@
                 success: function (data) {
                     console.log(data);
                 },
-                data: JSON.stringify({name: nickname, chatMessage: data, currentTime: new Date().getTime()})
-            })
+                data: JSON.stringify(toBeSent)
+            });
+            console.log(toBeSent)
         }
 
         $(document).ready(function () {
             poll();
-        })
+        });
+
+        function getNicknameFromMemory(){
+            if(ls.getItem("nick") != undefined && ls.getItem("nick") != null)
+                return ls.getItem("nick");
+            else{
+                var current = prompt("Wybierz nick");
+                ls.setItem("nick", current);
+                return current;
+            }
+        }
+
+        function getColorFromMemery(){
+            if(ls.getItem("color") != undefined && ls.getItem("color") != null)
+              return ls.getItem("color");
+            else {
+              ls.setItem("color", "#ff0000");
+              return "#ff0000";
+            }
+        }
 
     </script>
     </head>
@@ -102,8 +140,7 @@
             <button>Send</button>
         </form>
         <div class="chatContainer">
-            <ul id="messages" ></ul>
+            <ul id="messages" class="scrollPane" ></ul>
         </div>
-
     </body>
 </html>

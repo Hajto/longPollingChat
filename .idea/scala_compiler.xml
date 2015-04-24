@@ -3,7 +3,6 @@
   <component name="ScalaCompilerConfiguration">
     <profile name="SBT 2" modules="longpollingchat" />
     <profile name="SBT 2" modules="cometlongpollingchat">
-      <option name="postfixOps" value="true" />
       <option name="deprecationWarnings" value="true" />
       <option name="uncheckedWarnings" value="true" />
       <parameters>
