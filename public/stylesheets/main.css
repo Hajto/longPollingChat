@@ -42,12 +42,13 @@ form button {
 
 #messages li {
     padding: 5px 10px;
+    width:100%;
 }
 
 #messages li:nth-child(odd) {
     background: #eee;
 }
 
-div.chatContainer {
+div#chatContainer {
     margin-top: 40px;
 }
