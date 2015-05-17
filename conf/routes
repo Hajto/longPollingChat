@@ -4,7 +4,9 @@
 
 # Home page
 GET         /                    controllers.Application.index
-POST        /poll/:nick/:id      controllers.Application.poll(nick: String ,id: Long)
+POST        /poll                controllers.Application.poll
+POST        /unsub               controllers.Application.unsub
+POST        /pw/:name            controllers.Application.onPW(name)
 
 POST        /sendMessage         controllers.Application.onMessage
 

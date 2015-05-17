@@ -7,7 +7,7 @@ import model._
 import play.api._
 import play.api.libs.json.{JsObject, Json, JsError}
 import play.api.mvc._
-import model.JSONFormats.paperClipFormat
+import model.JSONFormats.{memberFormat,messageFormat}
 import play.libs.Akka
 import scala.concurrent.{TimeoutException, Future, Await, Promise}
 import scala.concurrent.duration._
@@ -32,24 +32,51 @@ object Application extends Controller {
     }
   }
 
-  implicit val timeout = Timeout(30 second)
-
-  def poll(nick:String, timestamp: Long) = Action{
-    val promiseOfResult = waitForList(nick, timestamp)
-    try {
-      val outCome = Await.result(promiseOfResult.future, 30 second)//.asInstanceOf[List[ChatMessage]]
-      Ok(Json.toJson(outCome))
-    } catch {
-      case e: TimeoutException => {
-        messagingActor ! UnSubsribe(nick)
-        Ok(Json.toJson(List()))
-      }
-    }
-
+  def onPW(nick:String) = Action {
+    Ok(nick)
   }
 
-  def waitForList(nick: String, timestamp: Long): Promise[List[ChatMessage]]  = {
-    Await.result(messagingActor.ask(Subscribe(nick, timestamp)),30 second).asInstanceOf[Promise[List[ChatMessage]]]
+  implicit val timeout = Timeout(30 second)
+
+  def poll = Action{ req =>
+    req.body.asJson.map { json =>
+      json.validate[Member].map { member =>
+        val promiseOfResult = waitForList(member.name, member.channel.get, member.currentTime)
+        try {
+          val outCome = Await.result(promiseOfResult, 30 second)
+          Ok(Json.toJson(outCome))
+        } catch {
+          case e: TimeoutException =>
+            Ok("NOOP")
+        }
+      }.recoverTotal {e => BadRequest("NOOP")}
+    }.getOrElse {
+      BadRequest("Expecting Json data")
+    }
+  }
+
+  def unsub = Action { implicit req =>
+    req.body.asJson.map { json =>
+      json.validate[ChatMessage].map{ chat =>
+        messagingActor ! UnSubsribe(chat.name)
+        messagingActor ! SendMessage(chat)
+        Ok("OK")
+      }.recoverTotal{
+        e => BadRequest("Detected error:"+ JsError.toFlatJson(e))
+      }
+    }.getOrElse {
+      BadRequest("Expecting Json data")
+    }
+  }
+
+  /*def asynqPoll(nick: String, timestamp: Long) = Action.async{
+    waitForList(nick,timestamp).map{ result =>
+      Ok(result)
+    } fallbackTo Future.successful(BadRequest())
+  }*/
+
+  def waitForList(nick: String, currentChannel: String ,timestamp: Long): Future[List[ChatMessage]]  = {
+    Await.result(messagingActor.ask(Subscribe(nick, currentChannel ,timestamp)),30 second).asInstanceOf[Future[List[ChatMessage]]]
   }
 
   lazy val messagingActor = {
@@ -61,5 +88,4 @@ object Application extends Controller {
 
     actor
   }
-
 }

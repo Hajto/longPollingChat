@@ -6,17 +6,17 @@ import play.Logger
 
 import scala.concurrent.Promise
 
-case class Subscribe(nick: String, seqId: Long)
+case class Subscribe(nick: String, currentChannel: String ,seqId: Long)
 case class UnSubsribe(nick: String)
 case class BroadcastMessages()
 case class Debug()
 case class SendMessage(chatMessage: ChatMessage)
 
 class MessagingActor extends Actor{
-  case class Member(lastMessage: Long, promise: MessagePromise)
+  case class Member(lastMessage: Long, channel: String , promise: MessagePromise, pw: List[ChatMessage])
   type MessagePromise = Promise[List[ChatMessage]]
 
-  var messages = List[ChatMessage]()
+  var messages = List[ChatMessage](ChatMessage("","","","",System.currentTimeMillis(),Some(1)))
   var members = Map.empty[String, Member]
 
   override def receive: Receive = {
@@ -24,7 +24,9 @@ class MessagingActor extends Actor{
       refreshMessages()
       members.foreach {
         case (key, member) => {
-          val newMessagesForMember = messages.filter(msg => msg.currentTime > member.lastMessage)
+          val newMessagesForMember = messages
+            .filter(msg => msg.id.get > member.lastMessage)
+            .filter(msg => msg.channel == member.channel)
           if (newMessagesForMember.size > 0) {
             member.promise.success(newMessagesForMember)
             members -= key
@@ -34,16 +36,16 @@ class MessagingActor extends Actor{
       }
     }
     case SendMessage(chatMessage: ChatMessage) =>
-      messages ::= chatMessage
-    case Subscribe(nick: String, lastMessage: Long) => {
-      val member =  Member(lastMessage, Promise[List[ChatMessage]]())
+      messages ::= ChatMessage(chatMessage.name,chatMessage.color,chatMessage.channel,chatMessage.chatMessage,chatMessage.currentTime, Some(messages.head.id.get+1))
+    case Subscribe(nick: String, currentChanel: String ,lastMessage: Long) => {
+      val member =  Member(lastMessage, currentChanel ,Promise[List[ChatMessage]](), List[ChatMessage]())
       members = members + (nick -> member)
 
       sender ! member.promise
       println(nick+" has subscribed at "+lastMessage)
     }
     case UnSubsribe(nick: String) => members -= nick
-    case Debug() => println("Currently " + members.size + " people on Chat")
+    case Debug() => println("Currently " + members.size + " people on Chat " + members.keys)
   }
 
   def refreshMessages() = {

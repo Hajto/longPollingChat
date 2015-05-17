@@ -18,6 +18,7 @@ form {
     position: fixed;
     top: 0;
     width: 100%;
+    z-index: 100;
 }
 
 form input {
@@ -50,5 +51,7 @@ form button {
 }
 
 div#chatContainer {
+    height: 100%;
+    position: relative;
     margin-top: 40px;
 }
