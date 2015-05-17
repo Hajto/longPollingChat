@@ -27,6 +27,7 @@ function parseAndAppendMessage(incomingObject) {
             .append($("<span>").html(incomingObject.name + ":").css("color", incomingObject.color))
             .append($("<p>").html(incomingObject.chatMessage).emoticonize())
     );
+    console.log(incomingObject.id);
     lastMessage = incomingObject.id > lastMessage ? incomingObject.id : lastMessage;
 }
 function unsubChat() {
@@ -88,7 +89,6 @@ function emitMessageAs(data, nick, color) {
         },
         data: JSON.stringify(toBeSent)
     });
-    console.log(toBeSent)
 }
 
 function emitMessage(data) {

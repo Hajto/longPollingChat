@@ -41,7 +41,7 @@ $(document).ready(function () {
             poll();
             appendMessage("Nowy jesteś teraz na kanale: " + args)
         });
-        new _command(/^(\/exit)/,"/changeChannel",function(args){
+        new _command(/^(\/exit)/,"/exit",function(args){
             unsubChat();
         });
     }
