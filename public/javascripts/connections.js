@@ -62,7 +62,9 @@ function poll() {
             $.each(data, function (index, element) {
                 parseAndAppendMessage(element)
             });
-            poll();
+        },
+        complete: function(error){
+            poll()
         },
         data: JSON.stringify(toBeSent),
         dataType: "json",
