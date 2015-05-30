@@ -1,8 +1,9 @@
+var previousCommandsRegister = [];
 $(document).ready(function () {
-    function initializeCommands(){
-        new _command(/^(\/nick)/, "/nick" , function(args){
+    function initializeCommands() {
+        new _command(/^(\/nick)/, "/nick", function (args) {
             if (args.length > 1 && nickname != args) {
-                emitMessageAs([nickname," zmienił nick na ",args].join(""), "System", "#000000");
+                emitMessageAs([nickname, " zmienił nick na ", args].join(""), "System", "#000000");
 
                 nickname = args;
                 ls.setItem("nick", args);
@@ -13,13 +14,13 @@ $(document).ready(function () {
             else {
                 appendMessage("Wpisałeś nowy nick?");
             }
-        });
-        new _command(/^(\/color)/,"/color",function(args){
+        }, " Aby zmienić nick");
+        new _command(/^(\/color)/, "/color", function (args) {
             if (args.length > 1) {
                 if (/(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(args)) {
                     currentColor = args;
                     ls.setItem("color", args);
-                    appendMessage(["Nowy kolor to ", '<span style="color:',args,'">',args,"</span>"].join(""));
+                    appendMessage(["Nowy kolor to ", '<span style="color:', args, '">', args, "</span>"].join(""));
                     return false;
                 }
                 else {
@@ -31,58 +32,105 @@ $(document).ready(function () {
                 appendMessage("Nie podałeś koloru");
                 return true;
             }
-        });
-        new _command(/^(\/empty)/,"/color",function(args){
+        }, " Aby zmienić kolor");
+        new _command(/^(\/empty)/, "/empty", function (args) {
             $("#messages").empty();
-        });
-        new _command(/^(\/changeChannel)/,"/changeChannel",function(args){
+        }, " Aby wyczyscic widok chatu");
+        new _command(/^(\/changeChannel)/, "/changeChannel", function (args) {
+            if (args.length > 0) {
+                unsubChat();
+                currentChannel = args;
+                $("#messages").empty();
+                poll();
+                appendMessage("Nowy jesteś teraz na kanale: " + args)
+            }
+        }, " Aby zmienic kanal, np. /changeChannel nazwaNowegoKanalu");
+        new _command(/^(\/exit)/, "/exit", function (args) {
             unsubChat();
-            currentChannel = args;
-            poll();
-            appendMessage("Nowy jesteś teraz na kanale: " + args)
-        });
-        new _command(/^(\/exit)/,"/exit",function(args){
+        }, " Aby opuscic chat.");
+        new _command(/^(\/connect)/, "/connect", function (args) {
             unsubChat();
-        });
-        new _command(/^(\/connect)/,"/connect",function(args){
-            unsubChat();
-        });
+        }, " Aby ponownie dolaczyc do chatu");
+        new _command(/^(\/help)/, "/help", function (args) {
+            var help = [];
+            for (var i = 0; i < allCommands.length; i++) {
+                help.push(allCommands[i].string.concat(" - ").concat(allCommands[i].description).concat("<br/>"))
+            }
+            appendMessage(help.join(""))
+        }, " Aby wyświetlić pomoc")
     }
 
-   initializeCommands();
+    function initializeAutoComplete(){
+        for(var i=0; i < allCommands.length; i++){
+            autocomplete.push(allCommands[i].string);
+        }
+        $("#m").autocomplete({
+            source: autocomplete
+        })
+    }
+
+    $("#forms").on("keydown", function (event) {
+        var targetRef = $(event.target);
+        var previous = parseInt(targetRef.attr("data-previous-command"));
+        switch (event.which) {
+            case 38:
+                if (previous < previousCommandsRegister.length) {
+                    console.log("Trying to set ");
+                    targetRef.val(previousCommandsRegister[previous]);
+                    targetRef.attr("data-previous-command", previous + 1)
+                }
+                break;
+            case 40:
+                if (previous > 0) {
+                    console.log("Trying to set ");
+                    targetRef.val(previousCommandsRegister[previous - 1]);
+                    targetRef.attr("data-previous-command", previous - 1)
+                } else {
+                    targetRef.val("")
+                }
+                break;
+        }
+    });
+
+    initializeCommands();
+    initializeAutoComplete();
 });
 
 var allCommands = [];
+var autocomplete = [];
 
-
-
-function applyToCommands(string){
-    var magicFlag = true;
-    $.each(allCommands, function (index,element) {
-        if(element.apply(string)){
-            magicFlag = false;
-            return false;
+function applyToCommands(string) {
+    if (string.length > 0) {
+        var magicFlag = true;
+        $.each(allCommands, function (index, element) {
+            if (element.apply(string)) {
+                previousCommandsRegister.push(string);
+                magicFlag = false;
+                return false;
+            }
+        });
+        if (magicFlag) {
+            emitMessage(string);
         }
-    });
-    if(magicFlag)
-        emitMessage(string);
+    }
 }
 
-function _command(regexp,string,action){
+function _command(regexp, string, action, description) {
     this.regexp = regexp;
     this.action = action;
     this.string = string;
+    this.description = description;
 
     allCommands.push(this);
 }
 
 _command.prototype.apply = function (string) {
-  if(this.regexp.test(string)){
-      this.action(string.substr(this.string.length+1));
-      console.log(string.substr(this.string.length+1));
-      return true;
-  } else {
-      return false;
-  }
+    if (this.regexp.test(string)) {
+        this.action(string.substr(this.string.length + 1));
+        console.log(string.substr(this.string.length + 1));
+        return true;
+    } else {
+        return false;
+    }
 
 };

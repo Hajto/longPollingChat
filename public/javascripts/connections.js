@@ -19,6 +19,12 @@ $(document).ready(function () {
         return false;
     });
 });
+function scrollAndRefresh(){
+    $('html, body').animate({
+        scrollTop: $(document).height()
+    }, 1000);
+    refreshScrollbar($(window).width(),$(window).height()-50)
+}
 function appendMessage(msg) {
     $('#messages').append($('<li>').html(msg));
 }
@@ -27,6 +33,7 @@ function parseAndAppendMessage(incomingObject) {
             .append($("<span>").html(incomingObject.name + ":").css("color", incomingObject.color))
             .append($("<p>").html(incomingObject.chatMessage).emoticonize())
     );
+    scrollAndRefresh();
     console.log(incomingObject.id);
     lastMessage = incomingObject.id > lastMessage ? incomingObject.id : lastMessage;
 }
