@@ -20,10 +20,10 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
-  def onMessage() = Action.async { request =>
+  def sendAnyMessage(isPrivate: Boolean) = Action.async { request =>
     request.body.asJson.map { json =>
       json.validate[ChatMessage].map{ chat =>
-        messagingActor ! SendMessage(chat)
+        messagingActor ! SendMessage(chat, isPrivate)
         Future.successful(Ok("OK"))
       }.recoverTotal{
         e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))
@@ -33,18 +33,9 @@ object Application extends Controller {
     }
   }
 
-  def onPW = Action.async { request =>
-    request.body.asJson.map { json =>
-      json.validate[ChatMessage].map{ chat =>
-        messagingActor ! SendPrivateMessage(chat)
-        Future.successful(Ok("OK"))
-      }.recoverTotal{
-        e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))
-      }
-    }.getOrElse {
-      Future.successful(BadRequest("Expecting Json data"))
-    }
-  }
+  def onMessage() = sendAnyMessage(false)
+
+  def onPW = sendAnyMessage(true)
 
   implicit val timeout = Timeout(30 second)
 
@@ -91,7 +82,7 @@ object Application extends Controller {
     req.body.asJson.map { json =>
       json.validate[ChatMessage].map{ chat =>
         messagingActor ! UnSubsribe(chat.name)
-        messagingActor ! SendMessage(chat)
+        messagingActor ! SendMessage(chat, isPrivate = false)
         Future.successful(Ok("OK"))
       }.recoverTotal{
         e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))

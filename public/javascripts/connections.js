@@ -98,6 +98,7 @@ function getListOfActiveUsers(){
     });
 }
 
+//TODO: Zrobić, tak aby ta funkcja nie była konieczna, bo jest bardzo niebezpieczna, ale w tym konkretnym momencie mi się nie chce.
 function emitMessageAs(data, nick, color) {
     var toBeSent = {
         name: nick,

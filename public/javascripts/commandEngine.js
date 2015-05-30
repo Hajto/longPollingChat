@@ -88,7 +88,7 @@ $(document).ready(function () {
                 });
                 appendMessage("Whispered to "+name+" : "+message)
             } else {
-                console.log(name.length + " " + message.length)
+                console.log(name.length + " " + message.length);
                 console.log(sliced)
             }
         }, " Aby wysłać prywatną wiadomosc do 'Downolnego użytkownika' ")

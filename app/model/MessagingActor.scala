@@ -9,10 +9,10 @@ import scala.concurrent.Promise
 case class Subscribe(nick: String, currentChannel: String ,seqId: Long)
 case class UnSubsribe(nick: String)
 case class BroadcastMessages()
+case class SendMessage(chatMessage: ChatMessage,isPrivate: Boolean)
 case class ListUsers()
 case class Debug()
-case class SendMessage(chatMessage: ChatMessage)
-case class SendPrivateMessage(chatMessage: ChatMessage)
+
 
 class MessagingActor extends Actor{
   case class Member(lastMessage: Long, channel: String, promise: MessagePromise)
@@ -41,10 +41,12 @@ class MessagingActor extends Actor{
         }
       }
     }
-    case SendMessage(chatMessage: ChatMessage) =>
-      messages ::= ChatMessage(chatMessage.name,chatMessage.color,chatMessage.channel,chatMessage.chatMessage,chatMessage.currentTime, Some(getNextMessageId))
-    case SendPrivateMessage( chatMessage: ChatMessage) =>
-      privateMailbox ::= chatMessage
+    case SendMessage(chatMessage: ChatMessage, isPrivate: Boolean) =>
+      if(isPrivate){
+        privateMailbox ::= chatMessage
+      } else {
+        messages ::= ChatMessage(chatMessage.name,chatMessage.color,chatMessage.channel,chatMessage.chatMessage,chatMessage.currentTime, Some(getNextMessageId))
+      }
     case Subscribe(nick: String, currentChanel: String ,lastMessage: Long) => {
       val member =  Member(lastMessage, currentChanel ,Promise[List[ChatMessage]]())
       members = members + (nick -> member)
