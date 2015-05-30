@@ -86,6 +86,7 @@ $(document).ready(function () {
                     },
                     data: JSON.stringify(toBeSent)
                 });
+                appendMessage("Whispered to "+name+" : "+message)
             } else {
                 console.log(name.length + " " + message.length)
                 console.log(sliced)
