@@ -22,7 +22,6 @@ class MessagingActor extends Actor{
 
   override def receive: Receive = {
     case BroadcastMessages() => {
-      refreshMessages()
       members.foreach {
         case (key, member) => {
           val newMessagesForMember = messages
@@ -47,6 +46,7 @@ class MessagingActor extends Actor{
     }
     case UnSubsribe(nick: String) => members -= nick
     case Debug() =>
+      refreshMessages()
       println("Currently " + members.size + " people on Chat " + members.keys + " wiadomosci " + messages.length)
   }
 

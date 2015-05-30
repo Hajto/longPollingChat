@@ -44,6 +44,9 @@ $(document).ready(function () {
         new _command(/^(\/exit)/,"/exit",function(args){
             unsubChat();
         });
+        new _command(/^(\/connect)/,"/connect",function(args){
+            unsubChat();
+        });
     }
 
    initializeCommands();

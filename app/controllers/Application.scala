@@ -8,6 +8,7 @@ import play.api._
 import play.api.libs.json.{JsObject, Json, JsError}
 import play.api.mvc._
 import model.JSONFormats.{memberFormat,messageFormat}
+import scala.concurrent.ExecutionContext.Implicits.global
 import play.libs.Akka
 import scala.concurrent.{TimeoutException, Future, Await, Promise}
 import scala.concurrent.duration._
@@ -19,16 +20,16 @@ object Application extends Controller {
     Ok(views.html.index())
   }
 
-  def onMessage() = Action { request =>
+  def onMessage() = Action.async { request =>
     request.body.asJson.map { json =>
       json.validate[ChatMessage].map{ chat =>
         messagingActor ! SendMessage(chat)
-        Ok("OK")
+        Future.successful(Ok("OK"))
       }.recoverTotal{
-        e => BadRequest("Detected error:"+ JsError.toFlatJson(e))
+        e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))
       }
     }.getOrElse {
-      BadRequest("Expecting Json data")
+      Future.successful(BadRequest("Expecting Json data"))
     }
   }
 
@@ -38,7 +39,7 @@ object Application extends Controller {
 
   implicit val timeout = Timeout(30 second)
 
-  def poll = Action{ req =>
+  /*def poll = Action{ req =>
     req.body.asJson.map { json =>
       json.validate[Member].map { member =>
         val promiseOfResult = waitForList(member.name, member.channel.get, member.currentTime)
@@ -53,27 +54,36 @@ object Application extends Controller {
     }.getOrElse {
       BadRequest("Expecting Json data")
     }
+  }*/
+
+  def poll = Action.async { implicit req =>
+    req.body.asJson.map { json =>
+      json.validate[Member].map { member =>
+        val promiseOfResult = waitForList(member.name, member.channel.get, member.currentTime)
+        val timeoutFuture = play.api.libs.concurrent.Promise.timeout("string", 1.second)
+        Future.firstCompletedOf(Seq(promiseOfResult, timeoutFuture)).map {
+          case i: List[ChatMessage] => Ok(Json.toJson(i))
+          case t: String => Ok(Json.toJson(List[ChatMessage]()))
+        }
+      }.recoverTotal {e => Future.successful(BadRequest("NOOP"))}
+    }.getOrElse {
+      Future.successful(BadRequest("Expecting Json data"))
+    }
   }
 
-  def unsub = Action { implicit req =>
+  def unsub = Action.async { implicit req =>
     req.body.asJson.map { json =>
       json.validate[ChatMessage].map{ chat =>
         messagingActor ! UnSubsribe(chat.name)
         messagingActor ! SendMessage(chat)
-        Ok("OK")
+        Future.successful(Ok("OK"))
       }.recoverTotal{
-        e => BadRequest("Detected error:"+ JsError.toFlatJson(e))
+        e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))
       }
     }.getOrElse {
-      BadRequest("Expecting Json data")
+      Future.successful(BadRequest("Expecting Json data"))
     }
   }
-
-  /*def asynqPoll(nick: String, timestamp: Long) = Action.async{
-    waitForList(nick,timestamp).map{ result =>
-      Ok(result)
-    } fallbackTo Future.successful(BadRequest())
-  }*/
 
   def waitForList(nick: String, currentChannel: String ,timestamp: Long): Future[List[ChatMessage]]  = {
     Await.result(messagingActor.ask(Subscribe(nick, currentChannel ,timestamp)),30 second).asInstanceOf[Future[List[ChatMessage]]]
@@ -83,7 +93,7 @@ object Application extends Controller {
     import scala.concurrent.ExecutionContext.Implicits.global
     val actor = Akka.system.actorOf(Props[MessagingActor])
     // Tell the actor to broadcast messages every 1 second
-    Akka.system.scheduler.schedule(0 seconds, 200 millis, actor, BroadcastMessages())
+    Akka.system.scheduler.schedule(0 seconds, 100 millis, actor, BroadcastMessages())
     Akka.system.scheduler.schedule(0 seconds, 10 seconds, actor, Debug())
 
     actor
