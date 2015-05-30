@@ -9,15 +9,17 @@ import scala.concurrent.Promise
 case class Subscribe(nick: String, currentChannel: String ,seqId: Long)
 case class UnSubsribe(nick: String)
 case class BroadcastMessages()
+case class ListUsers()
 case class Debug()
 case class SendMessage(chatMessage: ChatMessage)
-case class SendPrivateMessage(nick: String, chatMessage: ChatMessage)
+case class SendPrivateMessage(chatMessage: ChatMessage)
 
 class MessagingActor extends Actor{
   case class Member(lastMessage: Long, channel: String, promise: MessagePromise)
   type MessagePromise = Promise[List[ChatMessage]]
 
   var messages = List[ChatMessage]()
+  var privateMailbox = List[ChatMessage]()
   var members = Map.empty[String, Member]
   var lastMessageId = 0
 
@@ -28,9 +30,12 @@ class MessagingActor extends Actor{
           val newMessagesForMember = messages
             .filter(msg => msg.id.get > member.lastMessage)
             .filter(msg => msg.channel == member.channel)
-          if (newMessagesForMember.nonEmpty) {
-            member.promise.success(newMessagesForMember)
+          val privateMessages = privateMailbox
+            .filter(msg => msg.name == key)
+          if (newMessagesForMember.nonEmpty || privateMessages.nonEmpty) {
+            member.promise.success(newMessagesForMember ::: privateMessages)
             members -= key
+            privateMailbox = privateMailbox.filter(msg => !(msg.channel == member.channel))
             Logger.info("Broadcasting "+newMessagesForMember.size+" msgs to " + key)
           }
         }
@@ -38,8 +43,8 @@ class MessagingActor extends Actor{
     }
     case SendMessage(chatMessage: ChatMessage) =>
       messages ::= ChatMessage(chatMessage.name,chatMessage.color,chatMessage.channel,chatMessage.chatMessage,chatMessage.currentTime, Some(getNextMessageId))
-    case SendPrivateMessage(nick: String, chatMessage: ChatMessage) =>
-
+    case SendPrivateMessage( chatMessage: ChatMessage) =>
+      privateMailbox ::= chatMessage
     case Subscribe(nick: String, currentChanel: String ,lastMessage: Long) => {
       val member =  Member(lastMessage, currentChanel ,Promise[List[ChatMessage]]())
       members = members + (nick -> member)
@@ -48,6 +53,7 @@ class MessagingActor extends Actor{
       println(nick+" has subscribed at "+lastMessage)
     }
     case UnSubsribe(nick: String) => members -= nick
+    case ListUsers => sender ! members.keys.toList
     case Debug() =>
       refreshMessages()
       println("Currently " + members.size + " people on Chat " + members.keys + " wiadomosci " + messages.length)

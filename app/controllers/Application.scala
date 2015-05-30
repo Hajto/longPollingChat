@@ -33,8 +33,17 @@ object Application extends Controller {
     }
   }
 
-  def onPW(nick:String) = Action {
-    Ok(nick)
+  def onPW = Action.async { request =>
+    request.body.asJson.map { json =>
+      json.validate[ChatMessage].map{ chat =>
+        messagingActor ! SendPrivateMessage(chat)
+        Future.successful(Ok("OK"))
+      }.recoverTotal{
+        e => Future.successful(BadRequest("Detected error:"+ JsError.toFlatJson(e)))
+      }
+    }.getOrElse {
+      Future.successful(BadRequest("Expecting Json data"))
+    }
   }
 
   implicit val timeout = Timeout(30 second)
@@ -68,6 +77,13 @@ object Application extends Controller {
       }.recoverTotal {e => Future.successful(BadRequest("NOOP"))}
     }.getOrElse {
       Future.successful(BadRequest("Expecting Json data"))
+    }
+  }
+
+  def listusers = Action.async {
+    val listUsers = messagingActor ? ListUsers
+    listUsers.map { element =>
+      Ok(Json.toJson(element.asInstanceOf[List[String]]))
     }
   }
 

@@ -4,9 +4,11 @@
 
 # Home page
 GET         /                    controllers.Application.index
+GET         /listusers           controllers.Application.listusers
+
 POST        /poll                controllers.Application.poll
 POST        /unsub               controllers.Application.unsub
-POST        /pw/:name            controllers.Application.onPW(name)
+POST        /pw                  controllers.Application.onPW
 
 POST        /sendMessage         controllers.Application.onMessage
 

@@ -79,6 +79,25 @@ function poll() {
     })
 }
 
+function getListOfActiveUsers(){
+    $.ajax({
+        method: "GET",
+        url: "listusers",
+        dataType: "json",
+        contentType: "application/json; charset=utf-8",
+        success: function (response) {
+            console.log(response);
+            cos = response
+            var accumulator = "Online: ";
+            for(var i=0; i < response.length; i++){
+                //TODO: Lagpoint poprawic, ale teraz nie chce mi sie z tym bawic, z niewiadomych powodow concat nie dziala
+                accumulator += response[i] + " "
+            }
+            appendMessage(accumulator)
+        }
+    });
+}
+
 function emitMessageAs(data, nick, color) {
     var toBeSent = {
         name: nick,

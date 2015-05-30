@@ -57,11 +57,44 @@ $(document).ready(function () {
                 help.push(allCommands[i].string.concat(" - ").concat(allCommands[i].description).concat("<br/>"))
             }
             appendMessage(help.join(""))
-        }, " Aby wyświetlić pomoc")
+        }, " Aby wyświetlić pomoc");
+        new _command(/^(\/whoisactive)/, "/whoisactive", function (args) {
+            getListOfActiveUsers();
+        }, " Aby zobaczyc uzytkownikow online");
+        new _command(/^(\/pw)/, "/pw", function (args) {
+            var sliced = args.split("'");
+
+            var name = sliced[1];
+            var message = sliced[2];
+
+            if(name.length > 0 && message.length > 0){
+                var toBeSent = {
+                    name: name,
+                    channel: currentChannel,
+                    color: "#000000",
+                    chatMessage: nickname+ " whispers:"+message,
+                    currentTime: new Date().getTime()
+                };
+                $.ajax({
+                    url: "pw",
+                    method: "POST",
+                    dataType: "json",
+                    contentType: "application/json; charset=utf-8",
+                    traditional: true,
+                    success: function (data) {
+                        console.log(data);
+                    },
+                    data: JSON.stringify(toBeSent)
+                });
+            } else {
+                console.log(name.length + " " + message.length)
+                console.log(sliced)
+            }
+        }, " Aby wysłać prywatną wiadomosc do 'Downolnego użytkownika' ")
     }
 
-    function initializeAutoComplete(){
-        for(var i=0; i < allCommands.length; i++){
+    function initializeAutoComplete() {
+        for (var i = 0; i < allCommands.length; i++) {
             autocomplete.push(allCommands[i].string);
         }
         $("#m").autocomplete({
