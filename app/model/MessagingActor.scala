@@ -18,7 +18,7 @@ class MessagingActor extends Actor{
 
   var messages = List[ChatMessage]()
   var members = Map.empty[String, Member]
-  var lastMessageId = 0;
+  var lastMessageId = 0
 
   override def receive: Receive = {
     case BroadcastMessages() => {
@@ -27,7 +27,7 @@ class MessagingActor extends Actor{
           val newMessagesForMember = messages
             .filter(msg => msg.id.get > member.lastMessage)
             .filter(msg => msg.channel == member.channel)
-          if (newMessagesForMember.size > 0) {
+          if (newMessagesForMember.nonEmpty) {
             member.promise.success(newMessagesForMember)
             members -= key
             Logger.info("Broadcasting "+newMessagesForMember.size+" msgs to " + key)

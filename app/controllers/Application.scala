@@ -60,7 +60,7 @@ object Application extends Controller {
     req.body.asJson.map { json =>
       json.validate[Member].map { member =>
         val promiseOfResult = waitForList(member.name, member.channel.get, member.currentTime)
-        val timeoutFuture = play.api.libs.concurrent.Promise.timeout("string", 1.second)
+        val timeoutFuture = play.api.libs.concurrent.Promise.timeout("string", 20 seconds)
         Future.firstCompletedOf(Seq(promiseOfResult, timeoutFuture)).map {
           case i: List[ChatMessage] => Ok(Json.toJson(i))
           case t: String => Ok(Json.toJson(List[ChatMessage]()))
