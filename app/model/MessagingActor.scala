@@ -35,7 +35,7 @@ class MessagingActor extends Actor{
           if (newMessagesForMember.nonEmpty || privateMessages.nonEmpty) {
             member.promise.success(newMessagesForMember ::: privateMessages)
             members -= key
-            privateMailbox = privateMailbox.filter(msg => !(msg.channel == member.channel))
+            privateMailbox = privateMailbox.filter(msg => !(msg.name == key))
             Logger.info("Broadcasting "+newMessagesForMember.size+" msgs to " + key)
           }
         }
